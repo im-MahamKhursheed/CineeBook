@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Contact{% endblock %}
+
+{% block content %}
+
+<section style="background:var(--cb-surface);border-bottom:1px solid var(--cb-border);padding:48px 0 40px">
+  <div class="container">
+    <div class="hero-eyebrow mb-3"><i class="fa-solid fa-envelope me-2"></i>Get in Touch</div>
+    <h1 style="font-family:var(--cb-font-display);font-size:clamp(2rem,5vw,3.5rem);color:#fff;margin-bottom:8px">CONTACT US</h1>
+    <p style="color:var(--cb-muted)">Questions about the system? Feedback? We'd love to hear from you.</p>
+  </div>
+</section>
+
+<section class="page-section">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-5">
+        <div class="d-flex flex-column gap-4">
+          {% set contacts = [
+            ("fa-envelope","Email","hello@cinebook.demo","Send us a message"),
+            ("fa-map-pin","Location","Theatre District, Cinema Ave","Our physical address"),
+            ("fa-clock","Hours","Mon–Sun · 10:00 – 23:00","Box office open daily")
+          ] %}
+          {% for icon, label, value, sub in contacts %}
+          <div class="d-flex gap-4 align-items-start">
+            <div class="stat-icon amber"><i class="fa-solid {{icon}}"></i></div>
+            <div>
+              <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.15em;color:var(--cb-muted);margin-bottom:4px">{{label}}</div>
+              <div style="color:#fff;font-size:.95rem">{{value}}</div>
+              <div style="color:var(--cb-muted);font-size:.8rem">{{sub}}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="cb-form-card">
+          <h5 style="font-family:var(--cb-font-display);font-size:1.4rem;color:#fff;margin-bottom:24px">Send a Message</h5>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">First Name</label>
+              <input type="text" class="form-control" placeholder="John">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Last Name</label>
+              <input type="text" class="form-control" placeholder="Doe">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" placeholder="john@example.com">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Subject</label>
+              <select class="form-select">
+                <option>Booking Issue</option>
+                <option>Technical Question</option>
+                <option>Feedback</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Message</label>
+              <textarea class="form-control" rows="5" placeholder="Tell us how we can help…"></textarea>
+            </div>
+            <div class="col-12">
+              <button class="btn btn-accent w-100" onclick="showToast('Message sent! We\'ll be in touch soon.','success')">
+                <i class="fa-solid fa-paper-plane me-2"></i>Send Message
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

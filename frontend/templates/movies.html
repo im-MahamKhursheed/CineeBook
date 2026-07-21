@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Movies{% endblock %}
+
+{% block content %}
+
+<section style="background:var(--cb-surface);border-bottom:1px solid var(--cb-border);padding:48px 0 40px">
+  <div class="container">
+    <div class="hero-eyebrow mb-3"><i class="fa-solid fa-clapperboard me-2"></i>Now Showing</div>
+    <h1 style="font-family:var(--cb-font-display);font-size:clamp(2rem,5vw,3.5rem);color:#fff;margin-bottom:8px">WHAT'S PLAYING</h1>
+    <p style="color:var(--cb-muted)">Browse our current lineup and secure your seat before it's gone.</p>
+  </div>
+</section>
+
+<section class="page-section">
+  <div class="container">
+
+    <!-- Filter chips -->
+    <div class="d-flex flex-wrap gap-2 mb-5" id="genre-filters">
+      <button class="btn btn-accent btn-sm" onclick="filterGenre(null, this)">All</button>
+    </div>
+
+    <div class="row g-4" id="movies-grid">
+      <div class="col-12 text-center py-5" style="color:var(--cb-muted)">
+        <i class="fa-solid fa-spinner fa-spin fa-2x mb-3"></i><br>Loading movies…
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const GENRE_COLORS = {
+  'Sci-Fi': ['#0d1b4b','#4fc3f7'], 'Action': ['#1a0a0a','#ff6b6b'],
+  'Drama': ['#0a1a0a','#69f0ae'], 'Thriller': ['#1a1200','#ffd54f'],
+  'Mystery': ['#0f0f1a','#ce93d8'], 'default': ['#111118','#f5a623']
+};
+
+let allMovies = [], activeGenre = null;
+
+(async () => {
+  try {
+    const res = await fetch('/api/movies');
+    allMovies = await res.json();
+
+    // Build genre filters
+    const genres = [...new Set(allMovies.map(m => m.genre).filter(Boolean))];
+    const filterBar = document.getElementById('genre-filters');
+    genres.forEach(g => {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-outline-accent btn-sm';
+      btn.textContent = g;
+      btn.onclick = () => filterGenre(g, btn);
+      filterBar.appendChild(btn);
+    });
+
+    renderMovies(allMovies);
+  } catch(e) {
+    document.getElementById('movies-grid').innerHTML =
+      '<div class="col-12 text-center" style="color:var(--cb-red)">Failed to load movies.</div>';
+  }
+})();
+
+function filterGenre(genre, btn) {
+  document.querySelectorAll('#genre-filters .btn').forEach(b => {
+    b.className = 'btn btn-outline-accent btn-sm';
+  });
+  btn.className = 'btn btn-accent btn-sm';
+  activeGenre = genre;
+  renderMovies(genre ? allMovies.filter(m => m.genre === genre) : allMovies);
+}
+
+function renderMovies(movies) {
+  const grid = document.getElementById('movies-grid');
+  if (!movies.length) {
+    grid.innerHTML = '<div class="col-12 text-center" style="color:var(--cb-muted)">No movies found.</div>';
+    return;
+  }
+  grid.innerHTML = movies.map(m => {
+    const [bg, acc] = GENRE_COLORS[m.genre] || GENRE_COLORS.default;
+    const hrs = Math.floor(m.duration_min / 60), mins = m.duration_min % 60;
+    return `
+      <div class="col-md-6 col-lg-4">
+        <div class="movie-card h-100 d-flex flex-column">
+          <div class="movie-poster" style="background: ${m.poster_url ? `url('${m.poster_url}')` : `linear-gradient(135deg,${bg},#0a0a0f)`}; background-size: cover; background-position: center;">
+            ${m.poster_url ? '' : `<i class="fa-solid fa-film movie-poster-icon" style="color:${acc}"></i>`}
+            <div class="movie-rating"><i class="fa-solid fa-tag" style="font-size:.75rem"></i> ${m.genre || 'Cinema'}</div>
+          </div>
+          <div class="movie-info d-flex flex-column flex-grow-1">
+            <div class="movie-title">${m.title}</div>
+            <div class="movie-meta">${m.genre || 'Cinema'} · ${hrs}h ${mins}m</div>
+            <p style="color:var(--cb-muted);font-size:.82rem;flex-grow:1">${m.description || 'No description available.'}</p>
+            <a href="/booking?movie_id=${m.id}" class="btn btn-accent btn-sm w-100 mt-2">
+              <i class="fa-solid fa-ticket me-2"></i>Book Tickets
+            </a>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+</script>
+{% endblock %}

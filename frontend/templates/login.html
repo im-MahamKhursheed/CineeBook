@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Sign In{% endblock %}
+
+{% block content %}
+<section class="page-section">
+  <div class="container d-flex justify-content-center">
+    <div class="cb-form-card" style="width:100%;max-width:460px">
+      <div class="text-center mb-4">
+        <div class="brand-icon mx-auto mb-3" style="width:52px;height:52px;font-size:1.4rem"><i class="fa-solid fa-film"></i></div>
+        <h2 style="font-family:var(--cb-font-display);font-size:1.8rem;color:#fff">SIGN IN</h2>
+        <p style="color:var(--cb-muted);font-size:.85rem">Welcome back to CineBook</p>
+      </div>
+
+      <div id="login-error" class="alert alert-danger d-none" style="background:rgba(230,57,70,0.1);border-color:rgba(230,57,70,0.3);color:var(--cb-red);border-radius:8px;font-size:.85rem"></div>
+
+      <div class="d-flex flex-column gap-3">
+        <div>
+          <label class="form-label">Username</label>
+          <input type="text" class="form-control" id="username" placeholder="e.g. alice" autocomplete="username">
+        </div>
+        <div>
+          <label class="form-label">Password</label>
+          <div class="position-relative">
+            <input type="password" class="form-control" id="password" placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2" style="background:none;border:none;color:var(--cb-muted)" onclick="togglePw(this)">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <button class="btn btn-accent w-100 mt-1" id="login-btn" onclick="doLogin()">
+          <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In
+        </button>
+        <p class="text-center mb-0" style="color:var(--cb-muted);font-size:.83rem">
+          Don't have an account? <a href="/register">Register free</a>
+        </p>
+        <div class="mt-2 p-3 rounded-3" style="background:rgba(245,166,35,0.05);border:1px solid rgba(245,166,35,0.15);font-size:.78rem;color:var(--cb-muted)">
+          <strong style="color:var(--cb-accent)">Demo accounts:</strong><br>
+          Admin: <code>admin / Admin@123</code><br>
+          User: <code>alice / Alice@123</code> · <code>bob / Bob@123</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Redirect if already logged in
+if (Auth.isLoggedIn()) window.location.href = Auth.isAdmin() ? '/admin' : '/dashboard';
+
+function togglePw(btn) {
+  const inp = btn.closest('.position-relative').querySelector('input');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.querySelector('i').className = inp.type === 'password' ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+}
+
+async function doLogin() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const btn      = document.getElementById('login-btn');
+  const errEl    = document.getElementById('login-error');
+
+  if (!username || !password) {
+    errEl.textContent = 'Please enter both username and password.';
+    errEl.classList.remove('d-none');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Signing in…';
+  errEl.classList.add('d-none');
+
+  try {
+    const res  = await fetch('/auth/login', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      Auth.save(data.access_token, data.username, data.role);
+      showToast(`Welcome back, ${data.username}!`, 'success');
+      // Get redirect target or role-based default
+      const params = new URLSearchParams(window.location.search);
+      const next   = params.get('next') || (data.role === 'admin' ? '/admin' : '/dashboard');
+      setTimeout(() => window.location.href = next, 700);
+    } else {
+      errEl.textContent = data.detail || 'Invalid credentials.';
+      errEl.classList.remove('d-none');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-right-to-bracket me-2"></i>Sign In';
+    }
+  } catch(e) {
+    errEl.textContent = 'Network error. Please try again.';
+    errEl.classList.remove('d-none');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-right-to-bracket me-2"></i>Sign In';
+  }
+}
+
+// Enter key
+document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+</script>
+{% endblock %}

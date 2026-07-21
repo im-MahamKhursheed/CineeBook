@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git/
+.gitignore
+.gitattributes
+cinebook.db
+cinebook.db-shm
+cinebook.db-wal
+.vscode/
+.idea/
+*.md

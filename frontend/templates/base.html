@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}CineBook{% endblock %} — Premier Cinema Experience</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="/static/css/main.css"/>
+  <script>
+    (function() {
+      const theme = localStorage.getItem('cb_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg cinebook-nav sticky-top">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <span class="brand-icon"><i class="fa-solid fa-film"></i></span>
+      <span class="brand-text">CINE<span class="brand-accent">BOOK</span></span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+      <i class="fa-solid fa-bars text-white"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="mainNav">
+      <ul class="navbar-nav me-auto align-items-lg-center gap-lg-1" id="nav-links-container">
+        <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="/movies.html">Movies</a></li>
+        <li class="nav-item"><a class="nav-link nav-highlight" href="/booking.html">Book Tickets</a></li>
+        <li class="nav-item"><a class="nav-link" href="/about.html">About</a></li>
+        <li class="nav-item"><a class="nav-link" href="/faq.html">FAQ</a></li>
+        <li class="nav-item"><a class="nav-link" href="/contact.html">Contact</a></li>
+      </ul>
+      <!-- Theme Toggle -->
+      <ul class="navbar-nav ms-lg-auto align-items-lg-center gap-lg-1 me-lg-2">
+        <li class="nav-item">
+          <button id="theme-toggle" class="btn btn-link nav-link p-2" aria-label="Toggle theme" style="color: var(--cb-accent) !important; font-size: 1.1rem; border: none; background: transparent; cursor: pointer;">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+        </li>
+      </ul>
+      <!-- Dynamic auth zone injected by common.js -->
+      <ul class="navbar-nav ms-lg-2 align-items-lg-center gap-lg-1" id="nav-auth-zone"></ul>
+    </div>
+  </div>
+</nav>
+
+<!-- TOAST CONTAINER -->
+<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:9999"></div>
+
+<!-- TICKET MODAL -->
+<div class="admin-modal-overlay" id="ticket-modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="admin-modal" style="max-width:520px">
+    <div id="ticket-modal-body"></div>
+  </div>
+</div>
+
+<!-- PAGE CONTENT -->
+{% block content %}{% endblock %}
+
+<!-- FOOTER -->
+<footer class="cinebook-footer">
+  <div class="container">
+    <div class="row gy-4">
+      <div class="col-lg-4">
+        <div class="footer-brand mb-3">
+          <i class="fa-solid fa-film me-2"></i>CINE<span class="brand-accent">BOOK</span>
+        </div>
+        <p class="footer-desc">Multi-movie, multi-hall cinema booking with OS-grade concurrency. Per-showtime FCFS queues, semaphores and mutex locks.</p>
+      </div>
+      <div class="col-lg-2 col-6">
+        <h6 class="footer-heading">Navigate</h6>
+        <ul class="footer-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/movies">Movies</a></li>
+          <li><a href="/booking">Booking</a></li>
+          <li><a href="/about">About</a></li>
+        </ul>
+      </div>
+      <div class="col-lg-2 col-6">
+        <h6 class="footer-heading">Account</h6>
+        <ul class="footer-links">
+          <li><a href="/login">Sign In</a></li>
+          <li><a href="/register">Register</a></li>
+          <li><a href="/dashboard">My Tickets</a></li>
+          <li><a href="/faq">FAQ</a></li>
+        </ul>
+      </div>
+      <div class="col-lg-4">
+        <h6 class="footer-heading">OS Concurrency Stack</h6>
+        <div class="tech-pills">
+          <span class="tech-pill"><i class="fa-solid fa-lock me-1"></i>Mutex Lock</span>
+          <span class="tech-pill"><i class="fa-solid fa-gauge me-1"></i>Semaphore</span>
+          <span class="tech-pill"><i class="fa-solid fa-list-ol me-1"></i>FCFS Queue</span>
+          <span class="tech-pill"><i class="fa-brands fa-python me-1"></i>FastAPI</span>
+          <span class="tech-pill"><i class="fa-solid fa-database me-1"></i>MongoDB</span>
+        </div>
+      </div>
+    </div>
+    <hr class="footer-hr"/>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <p class="footer-copy mb-0">© 2025 CineBook — OS Project</p>
+      <div class="social-icons">
+        <a href=""><i class="fab fa-github"></i></a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script src="/static/js/common.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

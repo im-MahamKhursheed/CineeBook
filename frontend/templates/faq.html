@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}FAQ{% endblock %}
+
+{% block content %}
+
+<section style="background:var(--cb-surface);border-bottom:1px solid var(--cb-border);padding:48px 0 40px">
+  <div class="container">
+    <div class="hero-eyebrow mb-3"><i class="fa-solid fa-circle-question me-2"></i>Help Centre</div>
+    <h1 style="font-family:var(--cb-font-display);font-size:clamp(2rem,5vw,3.5rem);color:#fff;margin-bottom:8px">FREQUENTLY ASKED</h1>
+    <p style="color:var(--cb-muted)">Questions about our booking system and the OS concepts powering it.</p>
+  </div>
+</section>
+
+<section class="page-section">
+  <div class="container" style="max-width:800px">
+
+    <div class="accordion d-flex flex-column gap-2" id="faqAccordion">
+      {% set faqs = [
+        ("How does CineBook prevent double-booking?",
+         "Every booking passes through a threading.Lock() (Mutex). When one thread is writing a seat's state from 0 to 1, all other threads are blocked from entering that critical section. This makes the read-check-write sequence atomic."),
+        ("What happens when the theatre is full?",
+         "A threading.Semaphore(16) acts as a capacity gate. Each successful booking decrements the semaphore counter. When it reaches 0, all further acquire() calls block until a seat is freed (via reset). This enforces the physical capacity limit at the OS primitive level."),
+        ("What is FCFS scheduling and why does it matter?",
+         "First-Come, First-Served (FCFS) ensures that booking requests are processed in the exact order they arrive. A queue.Queue() buffers all requests and a single background worker drains them sequentially, preventing priority inversion or starvation."),
+        ("Can two users book the same seat simultaneously?",
+         "No. The Mutex ensures only one booking operation can execute at a time. Even if two requests arrive at the same millisecond, the FCFS queue serializes them, and the first one to complete will mark the seat as occupied. The second will receive an 'already booked' error."),
+        ("How do I reset all seats?",
+         "On the Booking page, scroll to the bottom of the right panel and click 'Dev Reset — Clear All Seats'. This calls POST /reset which reinitialises the seats dictionary and rebuilds the Semaphore. This feature is intended for demonstration purposes."),
+        ("Does the system use a database?",
+         "No — this is a pure in-memory demonstration. Seat state is stored in a Python dictionary and booking history in a list. All state resets when the server restarts. For a production system you would persist state to PostgreSQL or similar."),
+        ("What framework powers the backend?",
+         "FastAPI (Python) is used for the REST API and Jinja2 for server-side HTML templating. The concurrency layer uses only Python's built-in threading and queue modules — no external dependencies required.")
+      ] %}
+      {% for q, a in faqs %}
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#faq{{loop.index}}">
+            {{q}}
+          </button>
+        </h2>
+        <div id="faq{{loop.index}}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}">
+          <div class="accordion-body">{{a}}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="text-center mt-5">
+      <p style="color:var(--cb-muted)">Still have questions?</p>
+      <a href="/contact" class="btn btn-accent"><i class="fa-solid fa-envelope me-2"></i>Contact Us</a>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

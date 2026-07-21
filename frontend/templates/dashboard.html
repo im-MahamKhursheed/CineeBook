@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard{% endblock %}
+
+{% block content %}
+
+<section style="background:var(--cb-surface);border-bottom:1px solid var(--cb-border);padding:40px 0 32px">
+  <div class="container">
+    <div class="hero-eyebrow mb-3"><i class="fa-solid fa-user me-2"></i>User Dashboard</div>
+    <h1 style="font-family:var(--cb-font-display);font-size:clamp(1.8rem,4vw,3rem);color:#fff;margin-bottom:4px" id="dash-greeting">MY DASHBOARD</h1>
+    <p style="color:var(--cb-muted);font-size:.9rem">View your confirmed bookings and tickets.</p>
+  </div>
+</section>
+
+<!-- Dash tabs -->
+<div class="dash-nav">
+  <div class="container">
+    <span class="dash-tab active" onclick="switchTab('tickets', this)"><i class="fa-solid fa-ticket"></i>My Tickets</span>
+    <span class="dash-tab" onclick="switchTab('account', this)"><i class="fa-solid fa-user-gear"></i>Account</span>
+  </div>
+</div>
+
+<section class="page-section">
+  <div class="container">
+
+    <!-- MY TICKETS -->
+    <div id="tab-tickets" class="dash-section active">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h5 style="font-family:var(--cb-font-display);color:#fff;font-size:1.2rem;margin:0">CONFIRMED BOOKINGS</h5>
+        <a href="/booking" class="btn btn-accent btn-sm"><i class="fa-solid fa-plus me-1"></i>Book More Seats</a>
+      </div>
+      <div id="tickets-container">
+        <div class="text-center py-5" style="color:var(--cb-muted)">
+          <i class="fa-solid fa-spinner fa-spin fa-2x mb-3"></i><br>Loading your tickets…
+        </div>
+      </div>
+    </div>
+
+    <!-- ACCOUNT -->
+    <div id="tab-account" class="dash-section">
+      <div class="cb-card p-4" style="max-width:440px">
+        <h5 style="font-family:var(--cb-font-display);color:#fff;margin-bottom:20px">ACCOUNT INFO</h5>
+        <div class="d-flex flex-column gap-3">
+          <div style="display:flex;gap:12px;align-items:center">
+            <div style="width:52px;height:52px;background:rgba(245,166,35,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center">
+              <i class="fa-solid fa-user" style="color:var(--cb-accent);font-size:1.3rem"></i>
+            </div>
+            <div>
+              <div style="font-family:var(--cb-font-display);color:#fff;font-size:1.1rem" id="acc-username">—</div>
+              <div class="nav-user-pill mt-1" id="acc-role-pill">user</div>
+            </div>
+          </div>
+          <hr style="border-color:var(--cb-border)">
+          <p style="color:var(--cb-muted);font-size:.85rem">To change your password or email, please contact support.</p>
+          <button class="btn btn-sm" style="border:1px solid rgba(230,57,70,0.3);color:var(--cb-red);background:rgba(230,57,70,0.05);border-radius:8px;max-width:200px" onclick="logOut()">
+            <i class="fa-solid fa-right-from-bracket me-1"></i>Sign Out
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auth guard
+if (!Auth.isLoggedIn()) window.location.href = '/login?next=/dashboard';
+if (Auth.isAdmin())     window.location.href = '/admin';
+
+document.getElementById('dash-greeting').textContent = `${Auth.getUser().toUpperCase()}'S DASHBOARD`;
+document.getElementById('acc-username').textContent   = Auth.getUser();
+document.getElementById('acc-role-pill').textContent  = Auth.getRole();
+
+function switchTab(name, el) {
+  document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.dash-section').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(`tab-${name}`).classList.add('active');
+}
+
+async function loadTickets() {
+  const container = document.getElementById('tickets-container');
+  try {
+    const res  = await apiFetch('/me/tickets');
+    if (!res) return;
+    const data = await res.json();
+
+    if (!data.tickets || data.tickets.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-5">
+          <i class="fa-solid fa-ticket-simple fa-3x mb-3" style="color:var(--cb-border)"></i>
+          <p style="color:var(--cb-muted)">No tickets yet. <a href="/booking">Book your first seat!</a></p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `<div class="my-tickets-grid">${data.tickets.map(t => `
+      <div class="ticket-card">
+        <div class="ticket-header d-flex justify-content-between align-items-start">
+          <div>
+            <div style="font-size:.62rem;color:var(--cb-muted);text-transform:uppercase;letter-spacing:.1em">Booking #${t.booking_id}</div>
+            <div style="font-family:var(--cb-font-display);font-size:1.2rem;color:#fff;margin-top:2px">${t.movie_title}</div>
+          </div>
+          <div class="ticket-seat-badge">${t.seat_label}</div>
+        </div>
+        <div class="ticket-body">
+          <div class="row g-2">
+            <div class="col-6 ticket-field"><label>Hall</label><span>${t.hall_name}</span></div>
+            <div class="col-6 ticket-field"><label>Date</label><span>${fmtDate(t.show_timing)}</span></div>
+            <div class="col-6 ticket-field"><label>Time</label><span>${fmtTime(t.show_timing)}</span></div>
+            <div class="col-6 ticket-field"><label>Paid</label><span>Rs. ${t.amount_paid.toFixed(2)}</span></div>
+            <div class="col-12 mt-1">
+              <span class="ticket-status"><i class="fa-solid fa-circle-check"></i> ${t.payment_status}</span>
+              <span style="font-size:.7rem;color:var(--cb-muted);margin-left:10px">${fmtDate(t.booked_at)}</span>
+            </div>
+            <div class="col-12 mt-3 pt-2" style="border-top: 1px dashed rgba(255,255,255,0.1);">
+              <button class="btn btn-outline-accent btn-sm w-100" onclick="printReceiptById(${t.booking_id})" style="padding: 4px 8px; font-size: 0.75rem;">
+                <i class="fa-solid fa-print me-1"></i>Print Receipt
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>`).join('')}</div>`;
+  } catch(e) {
+    container.innerHTML = '<div class="text-center py-4" style="color:var(--cb-red)">Failed to load tickets.</div>';
+  }
+}
+
+loadTickets();
+</script>
+{% endblock %}

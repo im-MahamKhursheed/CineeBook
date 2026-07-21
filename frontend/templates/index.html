@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="cb-hero">
+  <div class="container position-relative" style="z-index:1">
+    <div class="row align-items-center gy-5">
+      <div class="col-lg-6">
+        <div class="hero-eyebrow fade-up"><i class="fa-solid fa-microchip me-2"></i>OS Concurrency · Multi-Movie · Multi-Hall</div>
+        <h1 class="hero-title fade-up delay-1">THE FUTURE<br>OF <span class="accent">CINEMA</span><br>BOOKING</h1>
+        <p class="hero-sub fade-up delay-2">Per-showtime FCFS queues, Semaphores and Mutex locks. Concurrent bookings for different halls never block each other.</p>
+        <div class="d-flex flex-wrap gap-3 fade-up delay-3">
+          <a href="/booking.html" class="btn btn-accent btn-lg"><i class="fa-solid fa-ticket me-2"></i>Book Tickets</a>
+          <a href="/movies.html" class="btn btn-outline-accent btn-lg"><i class="fa-solid fa-clapperboard me-2"></i>Now Showing</a>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="hero-visual">
+          <div class="p-4 rounded-3" style="background:var(--cb-surface);border:1px solid var(--cb-border)">
+            <div class="text-center mb-3">
+              <div class="seat-screen" style="max-width:80%;margin:0 auto 20px"></div>
+              <div style="font-size:.68rem;color:var(--cb-muted);letter-spacing:.15em;text-transform:uppercase">Live Seat Map Preview</div>
+            </div>
+            <div id="hero-seats" class="d-flex flex-wrap gap-2 justify-content-center mb-4"></div>
+            <div class="d-flex justify-content-between align-items-center px-1">
+              <div class="seat-legend" style="gap:14px">
+                <div class="legend-item"><div class="legend-dot free"></div> Free</div>
+                <div class="legend-item"><div class="legend-dot occupied"></div> Taken</div>
+              </div>
+              <a href="/booking" class="btn btn-accent btn-sm">Reserve <i class="fa-solid fa-arrow-right ms-1"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS STRIP -->
+<section class="py-4" style="background:var(--cb-surface);border-top:1px solid var(--cb-border);border-bottom:1px solid var(--cb-border)">
+  <div class="container">
+    <div class="row g-0 text-center">
+      <div class="col-6 col-md-3 py-3" style="border-right:1px solid var(--cb-border)">
+        <div style="font-family:var(--cb-font-display);font-size:2.2rem;color:var(--cb-accent)" id="stat-movies">—</div>
+        <div style="font-size:.72rem;color:var(--cb-muted);text-transform:uppercase;letter-spacing:.1em">Movies</div>
+      </div>
+      <div class="col-6 col-md-3 py-3" style="border-right:1px solid var(--cb-border)">
+        <div style="font-family:var(--cb-font-display);font-size:2.2rem;color:var(--cb-green)" id="stat-shows">—</div>
+        <div style="font-size:.72rem;color:var(--cb-muted);text-transform:uppercase;letter-spacing:.1em">Showtimes</div>
+      </div>
+      <div class="col-6 col-md-3 py-3" style="border-right:1px solid var(--cb-border)">
+        <div style="font-family:var(--cb-font-display);font-size:2.2rem;color:var(--cb-red)">2</div>
+        <div style="font-size:.72rem;color:var(--cb-muted);text-transform:uppercase;letter-spacing:.1em">Halls</div>
+      </div>
+      <div class="col-6 col-md-3 py-3">
+        <div style="font-family:var(--cb-font-display);font-size:2.2rem;color:var(--cb-text)">FCFS</div>
+        <div style="font-size:.72rem;color:var(--cb-muted);text-transform:uppercase;letter-spacing:.1em">Per-Showtime</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OS CONCEPTS -->
+<section class="page-section">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-tag"><i class="fa-solid fa-gears me-1"></i> OS Concurrency</div>
+      <h2 class="section-title">How It Works Under the Hood</h2>
+      <p class="section-sub mx-auto">Every booking passes through three OS primitives — scoped per showtime so Inception in Hall A never blocks The Dark Knight in Hall B.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="tech-card h-100">
+          <div class="tech-icon"><i class="fa-solid fa-lock"></i></div>
+          <h5 class="mb-2" style="font-family:var(--cb-font-display);font-size:1.3rem;color:#fff">Mutex Lock</h5>
+          <p style="color:var(--cb-muted);font-size:.88rem">A <code style="color:var(--cb-accent)">threading.Lock()</code> guards the critical section where seat states are read and written per showtime, preventing any race condition.</p>
+          <div class="os-badge mt-3"><i class="fa-solid fa-shield-halved"></i> Prevents Race Conditions</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="tech-card h-100">
+          <div class="tech-icon"><i class="fa-solid fa-gauge-high"></i></div>
+          <h5 class="mb-2" style="font-family:var(--cb-font-display);font-size:1.3rem;color:#fff">Semaphore</h5>
+          <p style="color:var(--cb-muted);font-size:.88rem">A <code style="color:var(--cb-accent)">threading.Semaphore(capacity)</code> per hall enforces the physical seat ceiling — fully booked halls block at the gate.</p>
+          <div class="os-badge mt-3"><i class="fa-solid fa-users"></i> Enforces Hall Capacity</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="tech-card h-100">
+          <div class="tech-icon"><i class="fa-solid fa-list-ol"></i></div>
+          <h5 class="mb-2" style="font-family:var(--cb-font-display);font-size:1.3rem;color:#fff">FCFS Queue</h5>
+          <p style="color:var(--cb-muted);font-size:.88rem">A <code style="color:var(--cb-accent)">queue.Queue()</code> per showtime ensures strict ordering. The first HTTP request in is the first seat confirmed — no favouritism.</p>
+          <div class="os-badge mt-3"><i class="fa-solid fa-arrow-right-arrow-left"></i> Per-Showtime Ordering</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED MOVIES (live from API) -->
+<section class="page-section" style="background:var(--cb-surface);border-top:1px solid var(--cb-border);border-bottom:1px solid var(--cb-border)">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-end mb-5 flex-wrap gap-3">
+      <div>
+        <div class="section-tag">Now Showing</div>
+        <h2 class="section-title mb-0">Featured Films</h2>
+      </div>
+      <a href="/movies" class="btn btn-outline-accent">View All <i class="fa-solid fa-arrow-right ms-1"></i></a>
+    </div>
+    <div class="row g-4" id="featured-movies">
+      <div class="col-12 text-center py-4" style="color:var(--cb-muted)">
+        <i class="fa-solid fa-spinner fa-spin me-2"></i>Loading movies…
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="page-section text-center">
+  <div class="container" style="max-width:640px">
+    <i class="fa-solid fa-ticket" style="font-size:2.5rem;color:var(--cb-accent);opacity:.3;margin-bottom:20px"></i>
+    <h2 class="section-title">Ready to Reserve Your Seat?</h2>
+    <p class="section-sub mx-auto mb-4">Multi-movie selection · Per-hall semaphores · Race-condition-free booking.</p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+      <a href="/booking" class="btn btn-accent btn-lg"><i class="fa-solid fa-ticket me-2"></i>Book Now</a>
+      <a href="/register" class="btn btn-outline-accent btn-lg">Create Account</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const GENRE_COLORS = {
+  'Sci-Fi': ['#0d1b4b','#4fc3f7'], 'Action': ['#1a0a0a','#ff6b6b'],
+  'Drama': ['#0a1a0a','#69f0ae'], 'Thriller': ['#1a1200','#ffd54f'],
+  'Mystery': ['#0f0f1a','#ce93d8'], 'default': ['#111118','#f5a623']
+};
+
+(async () => {
+  // Load movies
+  try {
+    const [movRes, showRes] = await Promise.all([
+      fetch('/api/movies'), fetch('/showtimes')
+    ]);
+    const movies    = await movRes.json();
+    const showtimes = await showRes.json();
+
+    document.getElementById('stat-movies').textContent = movies.length;
+    document.getElementById('stat-shows').textContent  = showtimes.length;
+
+    const container = document.getElementById('featured-movies');
+    if (!movies.length) {
+      container.innerHTML = '<div class="col-12 text-center" style="color:var(--cb-muted)">No movies available.</div>';
+      return;
+    }
+
+    container.innerHTML = movies.slice(0, 3).map(m => {
+      const [bg, acc] = GENRE_COLORS[m.genre] || GENRE_COLORS.default;
+      const hrs = Math.floor(m.duration_min / 60), mins = m.duration_min % 60;
+      return `
+        <div class="col-md-4">
+          <div class="movie-card">
+            <div class="movie-poster" style="background: ${m.poster_url ? `url('${m.poster_url}')` : `linear-gradient(135deg,${bg},#0a0a0f)`}; background-size: cover; background-position: center;">
+              ${m.poster_url ? '' : `<i class="fa-solid fa-film movie-poster-icon" style="color:${acc}"></i>`}
+              <div class="movie-rating"><i class="fa-solid fa-star" style="font-size:.75rem"></i> ${m.genre || '—'}</div>
+            </div>
+            <div class="movie-info">
+              <div class="movie-title">${m.title}</div>
+              <div class="movie-meta">${m.genre || 'Cinema'} · ${hrs}h ${mins}m</div>
+              <a href="/booking?movie_id=${m.id}" class="btn btn-accent btn-sm w-100">
+                <i class="fa-solid fa-ticket me-2"></i>Book Now
+              </a>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('featured-movies').innerHTML =
+      '<div class="col-12 text-center" style="color:var(--cb-muted)">Could not load movies.</div>';
+  }
+
+  // Hero seat preview — first showtime
+  try {
+    const res = await fetch('/showtimes');
+    const shows = await res.json();
+    if (!shows.length) return;
+    const token = localStorage.getItem('cb_token');
+    if (!token) return;
+    const seatRes = await fetch(`/showtimes/${shows[0].id}/seats`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!seatRes.ok) return;
+    const seatData = await seatRes.json();
+    const el = document.getElementById('hero-seats');
+    if (!el) return;
+    seatData.seats.slice(0, 8).forEach(s => {
+      const btn = document.createElement('button');
+      btn.className = `seat-btn ${!s.is_booked ? 'free' : 'occupied'}`;
+      btn.disabled = s.is_booked;
+      btn.innerHTML = `<span style="font-size:.65rem">${s.seat_label}</span>`;
+      el.appendChild(btn);
+    });
+  } catch(e) {}
+})();
+</script>
+{% endblock %}

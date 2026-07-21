@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+
+{% block content %}
+
+<section style="background:var(--cb-surface);border-bottom:1px solid var(--cb-border);padding:48px 0 40px">
+  <div class="container">
+    <div class="hero-eyebrow mb-3"><i class="fa-solid fa-microchip me-2"></i>The Technology</div>
+    <h1 style="font-family:var(--cb-font-display);font-size:clamp(2rem,5vw,3.5rem);color:#fff;margin-bottom:8px">ABOUT CINEBOOK</h1>
+    <p style="color:var(--cb-muted);max-width:540px">A demonstration of real Operating System concurrency primitives applied to a practical booking system problem.</p>
+  </div>
+</section>
+
+<section class="page-section">
+  <div class="container">
+
+    <div class="row g-5 align-items-start">
+      <div class="col-lg-6">
+        <div class="section-tag">Mission</div>
+        <h2 class="section-title">Concurrency Without Compromise</h2>
+        <p style="color:var(--cb-muted);line-height:1.8">CineBook was built as an academic demonstration that real OS concepts — the same primitives used inside production operating systems — can be applied directly to solve business problems like double-booking, overselling, and request ordering.</p>
+        <p style="color:var(--cb-muted);line-height:1.8">Every booking request enters a <strong style="color:var(--cb-text)">FCFS Queue</strong>, passes through a <strong style="color:var(--cb-text)">Semaphore</strong> gate, and is written inside a <strong style="color:var(--cb-text)">Mutex-guarded</strong> critical section. This three-layer design eliminates race conditions entirely.</p>
+      </div>
+      <div class="col-lg-6">
+        <div class="cb-card p-4">
+          <h5 style="font-family:var(--cb-font-display);color:#fff;margin-bottom:20px">Request Lifecycle</h5>
+          <div class="d-flex flex-column gap-3">
+            {% set steps = [
+              ("1","fa-paper-plane","Request Received","POST /book/{seat_id} arrives at the FastAPI endpoint"),
+              ("2","fa-list-ol","FCFS Enqueue","Request is placed in queue.Queue() — first come, first served"),
+              ("3","fa-gauge","Semaphore Acquire","Worker thread calls capacity.acquire() — blocks if theatre full"),
+              ("4","fa-lock","Mutex Lock","threading.Lock() is acquired; critical section begins"),
+              ("5","fa-database","Seat State Write","seats[seat_id] = 1 is written atomically inside the lock"),
+              ("6","fa-unlock","Mutex Release","Lock released; next thread may now enter critical section"),
+              ("7","fa-circle-check","Response Sent","JSON {status: success} returned to the client")
+            ] %}
+            {% for num, icon, title, desc in steps %}
+            <div class="d-flex gap-3 align-items-start">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--cb-accent-glow);border:1px solid rgba(245,166,35,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.7rem;color:var(--cb-accent);font-family:var(--cb-font-display)">{{num}}</div>
+              <div>
+                <div style="font-size:.85rem;color:var(--cb-text);font-weight:500"><i class="fa-solid {{icon}} me-2" style="color:var(--cb-accent)"></i>{{title}}</div>
+                <div style="font-size:.78rem;color:var(--cb-muted)">{{desc}}</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="row g-4">
+      <div class="col-12 text-center mb-3">
+        <div class="section-tag">Tech Stack</div>
+        <h2 class="section-title">Built With</h2>
+      </div>
+      {% set stack = [
+        ("fa-python","Python 3.11","Core language powering the backend runtime"),
+        ("fa-bolt","FastAPI","Async web framework with automatic OpenAPI docs"),
+        ("fa-lock","threading.Lock()","Mutual exclusion for critical sections"),
+        ("fa-gauge-high","threading.Semaphore()","Capacity-limiting concurrency primitive"),
+        ("fa-list-ol","queue.Queue()","Thread-safe FCFS request scheduler"),
+        ("fa-layer-group","Jinja2 Templates","Server-side multi-page HTML rendering"),
+        ("fa-bootstrap","Bootstrap 5","Responsive UI component library"),
+        ("fa-js","Vanilla JavaScript","Async fetch for real-time API communication")
+      ] %}
+      {% for icon, name, desc in stack %}
+      <div class="col-md-6 col-lg-3">
+        <div class="tech-card h-100">
+          <div class="tech-icon"><i class="fa-brands {{icon}} fa-solid {{icon}}"></i></div>
+          <h6 style="color:#fff;margin-bottom:6px">{{name}}</h6>
+          <p style="color:var(--cb-muted);font-size:.82rem;margin:0">{{desc}}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</section>
+{% endblock %}

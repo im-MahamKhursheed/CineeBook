@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<section class="page-section">
+  <div class="container d-flex justify-content-center">
+    <div class="cb-form-card" style="width:100%;max-width:500px">
+      <div class="text-center mb-4">
+        <div class="brand-icon mx-auto mb-3" style="width:52px;height:52px;font-size:1.4rem"><i class="fa-solid fa-film"></i></div>
+        <h2 style="font-family:var(--cb-font-display);font-size:1.8rem;color:#fff">CREATE ACCOUNT</h2>
+        <p style="color:var(--cb-muted);font-size:.85rem">Join CineBook and never miss a showtime</p>
+      </div>
+
+      <div id="reg-error" class="alert d-none mb-3" style="background:rgba(230,57,70,0.1);border:1px solid rgba(230,57,70,0.3);color:var(--cb-red);border-radius:8px;font-size:.85rem"></div>
+
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label">Username</label>
+          <input type="text" class="form-control" id="username" placeholder="Choose a username (min 3 chars)" autocomplete="username">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" id="email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-control" id="password" placeholder="Min 8 characters" autocomplete="new-password">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Confirm Password</label>
+          <input type="password" class="form-control" id="confirm" placeholder="Repeat password" autocomplete="new-password">
+        </div>
+        <div class="col-12">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="terms">
+            <label class="form-check-label" for="terms" style="color:var(--cb-muted);font-size:.83rem">
+              I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+            </label>
+          </div>
+        </div>
+        <div class="col-12">
+          <button class="btn btn-accent w-100" id="reg-btn" onclick="doRegister()">
+            <i class="fa-solid fa-user-plus me-2"></i>Create Account
+          </button>
+          <p class="text-center mt-3 mb-0" style="color:var(--cb-muted);font-size:.83rem">
+            Already have an account? <a href="/login">Sign in</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+if (Auth.isLoggedIn()) window.location.href = '/dashboard';
+
+async function doRegister() {
+  const username = document.getElementById('username').value.trim();
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const confirm  = document.getElementById('confirm').value;
+  const terms    = document.getElementById('terms').checked;
+  const btn      = document.getElementById('reg-btn');
+  const errEl    = document.getElementById('reg-error');
+
+  errEl.classList.add('d-none');
+
+  if (!username || !email || !password || !confirm) {
+    errEl.textContent = 'Please fill in all fields.';
+    errEl.classList.remove('d-none'); return;
+  }
+  if (password !== confirm) {
+    errEl.textContent = 'Passwords do not match.';
+    errEl.classList.remove('d-none'); return;
+  }
+  if (password.length < 8) {
+    errEl.textContent = 'Password must be at least 8 characters.';
+    errEl.classList.remove('d-none'); return;
+  }
+  if (!terms) {
+    errEl.textContent = 'Please accept the terms to continue.';
+    errEl.classList.remove('d-none'); return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Creating account…';
+
+  try {
+    const res  = await fetch('/auth/register', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({ username, email, password }),
+    });
+    const data = await res.json();
+
+    if (res.ok || res.status === 201) {
+      Auth.save(data.access_token, data.username, data.role);
+      showToast(`Account created! Welcome, ${data.username}!`, 'success');
+      setTimeout(() => window.location.href = '/dashboard', 800);
+    } else {
+      errEl.textContent = data.detail || 'Registration failed.';
+      errEl.classList.remove('d-none');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-user-plus me-2"></i>Create Account';
+    }
+  } catch(e) {
+    errEl.textContent = 'Network error. Please try again.';
+    errEl.classList.remove('d-none');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-user-plus me-2"></i>Create Account';
+  }
+}
+</script>
+{% endblock %}

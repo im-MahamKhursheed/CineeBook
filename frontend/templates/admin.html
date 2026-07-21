@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+
+<section style="background:var(--cb-surface);border-bottom:1px solid var(--cb-border);padding:40px 0 32px">
+  <div class="container">
+    <div class="hero-eyebrow mb-3" style="color:#818cf8;background:rgba(129,140,248,0.1);border-color:rgba(129,140,248,0.25)">
+      <i class="fa-solid fa-shield-halved me-2"></i>Admin Panel
+    </div>
+    <h1 style="font-family:var(--cb-font-display);font-size:clamp(1.8rem,4vw,3rem);color:#fff;margin-bottom:4px">ADMIN DASHBOARD</h1>
+    <p style="color:var(--cb-muted);font-size:.9rem">Manage movies, halls, showtimes and audit all bookings.</p>
+  </div>
+</section>
+
+<!-- Tabs -->
+<div class="dash-nav">
+  <div class="container">
+    <span class="dash-tab active" onclick="switchTab('audit', this)"><i class="fa-solid fa-eye"></i>Audit Log</span>
+    <span class="dash-tab" onclick="switchTab('movies', this)"><i class="fa-solid fa-clapperboard"></i>Movies</span>
+    <span class="dash-tab" onclick="switchTab('halls', this)"><i class="fa-solid fa-building"></i>Halls</span>
+    <span class="dash-tab" onclick="switchTab('showtimes', this)"><i class="fa-solid fa-clock"></i>Showtimes</span>
+  </div>
+</div>
+
+<section class="page-section">
+  <div class="container">
+
+    <!-- ── AUDIT LOG   ─────── -->
+    <div id="tab-audit" class="dash-section active">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h5 style="font-family:var(--cb-font-display);color:#fff;font-size:1.2rem;margin:0">ALL BOOKINGS AUDIT</h5>
+        <button class="btn btn-outline-accent btn-sm" onclick="loadAudit()"><i class="fa-solid fa-rotate me-1"></i>Refresh</button>
+      </div>
+      <div id="audit-container">
+        <div class="text-center py-5" style="color:var(--cb-muted)"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>
+      </div>
+    </div>
+
+    <!-- ── MOVIES   ────────── -->
+    <div id="tab-movies" class="dash-section">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h5 style="font-family:var(--cb-font-display);color:#fff;font-size:1.2rem;margin:0">MANAGE MOVIES</h5>
+        <button class="btn btn-accent btn-sm" onclick="openMovieModal()"><i class="fa-solid fa-plus me-1"></i>Add Movie</button>
+      </div>
+      <div id="movies-container"></div>
+    </div>
+
+    <!-- ── HALLS   ─────────── -->
+    <div id="tab-halls" class="dash-section">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h5 style="font-family:var(--cb-font-display);color:#fff;font-size:1.2rem;margin:0">MANAGE HALLS</h5>
+        <button class="btn btn-accent btn-sm" onclick="openHallModal()"><i class="fa-solid fa-plus me-1"></i>Add Hall</button>
+      </div>
+      <div id="halls-container"></div>
+    </div>
+
+    <!-- ── SHOWTIMES   ──────── -->
+    <div id="tab-showtimes" class="dash-section">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h5 style="font-family:var(--cb-font-display);color:#fff;font-size:1.2rem;margin:0">MANAGE SHOWTIMES</h5>
+        <button class="btn btn-accent btn-sm" onclick="openShowtimeModal()"><i class="fa-solid fa-plus me-1"></i>Add Showtime</button>
+      </div>
+      <div id="showtimes-container"></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── ADD MOVIE MODAL   ────── -->
+<div class="admin-modal-overlay" id="movie-modal" onclick="if(event.target===this)closeModal('movie-modal')">
+  <div class="admin-modal">
+    <h5 id="movie-modal-title">Add Movie</h5>
+    <input type="hidden" id="movie-edit-id">
+    <div class="d-flex flex-column gap-3">
+      <div><label class="form-label">Title *</label><input type="text" class="form-control" id="m-title" placeholder="Movie title"></div>
+      <div><label class="form-label">Genre</label><input type="text" class="form-control" id="m-genre" placeholder="e.g. Sci-Fi, Action"></div>
+      <div><label class="form-label">Duration (minutes) *</label><input type="number" class="form-control" id="m-duration" placeholder="e.g. 148" min="1"></div>
+      <div><label class="form-label">Description</label><textarea class="form-control" id="m-desc" rows="3" placeholder="Short description"></textarea></div>
+      <div><label class="form-label">Poster URL</label><input type="text" class="form-control" id="m-poster" placeholder="https://…"></div>
+      <div class="d-flex gap-2 mt-1">
+        <button class="btn btn-accent flex-grow-1" onclick="saveMovie()"><i class="fa-solid fa-floppy-disk me-1"></i>Save</button>
+        <button class="btn btn-outline-accent" onclick="closeModal('movie-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD HALL MODAL   ─────── -->
+<div class="admin-modal-overlay" id="hall-modal" onclick="if(event.target===this)closeModal('hall-modal')">
+  <div class="admin-modal">
+    <h5>Add Hall</h5>
+    <div class="d-flex flex-column gap-3">
+      <div><label class="form-label">Hall Name *</label><input type="text" class="form-control" id="h-name" placeholder="e.g. Hall C"></div>
+      <div><label class="form-label">Capacity *</label><input type="number" class="form-control" id="h-capacity" placeholder="e.g. 24" min="1"></div>
+      <div><label class="form-label">Seats per Row *</label><input type="number" class="form-control" id="h-spr" placeholder="e.g. 6" min="1" value="6"></div>
+      <div class="d-flex gap-2 mt-1">
+        <button class="btn btn-accent flex-grow-1" onclick="saveHall()"><i class="fa-solid fa-floppy-disk me-1"></i>Save</button>
+        <button class="btn btn-outline-accent" onclick="closeModal('hall-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD SHOWTIME MODAL   ─── -->
+<div class="admin-modal-overlay" id="showtime-modal" onclick="if(event.target===this)closeModal('showtime-modal')">
+  <div class="admin-modal">
+    <h5>Add Showtime</h5>
+    <div class="d-flex flex-column gap-3">
+      <div><label class="form-label">Movie *</label><select class="form-select" id="st-movie"></select></div>
+      <div><label class="form-label">Hall *</label><select class="form-select" id="st-hall"></select></div>
+      <div><label class="form-label">Start Time *</label><input type="datetime-local" class="form-control" id="st-time"></div>
+      <div><label class="form-label">Ticket Price (PKR) *</label><input type="number" class="form-control" id="st-price" placeholder="1000.00" min="0" step="0.01"></div>
+      <div class="d-flex gap-2 mt-1">
+        <button class="btn btn-accent flex-grow-1" onclick="saveShowtime()"><i class="fa-solid fa-floppy-disk me-1"></i>Save</button>
+        <button class="btn btn-outline-accent" onclick="closeModal('showtime-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auth guard — admin only
+if (!Auth.isLoggedIn()) window.location.href = '/login?next=/admin';
+if (!Auth.isAdmin())    window.location.href = '/dashboard';
+
+let allMoviesAdmin = [], allHallsAdmin = [];
+
+function switchTab(name, el) {
+  document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.dash-section').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(`tab-${name}`).classList.add('active');
+  if (name === 'audit')     loadAudit();
+  if (name === 'movies')    loadMovies();
+  if (name === 'halls')     loadHalls();
+  if (name === 'showtimes') loadShowtimes();
+
+  if (typeof syncAdminNavbar === 'function') {
+    syncAdminNavbar(name);
+  }
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+
+/* ── AUDIT  ─── */
+async function loadAudit() {
+  const c = document.getElementById('audit-container');
+  c.innerHTML = '<div class="text-center py-4" style="color:var(--cb-muted)"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+  try {
+    const res  = await apiFetch('/admin/audit');
+    if (!res) return;
+    const data = await res.json();
+    if (!data.bookings.length) {
+      c.innerHTML = '<p style="color:var(--cb-muted)">No bookings yet.</p>'; return;
+    }
+    c.innerHTML = `
+      <div style="overflow-x:auto">
+        <table class="admin-table">
+          <thead><tr>
+            <th>#</th><th>User</th><th>Movie</th><th>Hall</th><th>Showtime</th>
+            <th>Seat</th><th>Status</th><th>Paid</th><th>Booked</th>
+          </tr></thead>
+          <tbody>${data.bookings.map(b => `<tr>
+            <td style="color:var(--cb-muted)">${b.booking_id}</td>
+            <td><strong>${b.username}</strong><br><span style="font-size:.72rem;color:var(--cb-muted)">${b.email}</span></td>
+            <td>${b.movie_title}</td>
+            <td>${b.hall_name}</td>
+            <td>${fmtDateTime(b.show_timing)}</td>
+            <td><strong style="color:var(--cb-accent)">${b.seat_label}</strong></td>
+            <td><span class="badge-${b.booking_status}">${b.booking_status}</span></td>
+            <td>${b.amount_paid != null ? 'Rs. '+b.amount_paid.toFixed(2) : '—'}</td>
+            <td style="font-size:.75rem;color:var(--cb-muted)">${fmtDateTime(b.booked_at)}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+      <p style="font-size:.75rem;color:var(--cb-muted);margin-top:12px">Total confirmed: ${data.total}</p>`;
+  } catch(e) {
+    c.innerHTML = '<div style="color:var(--cb-red)">Failed to load audit.</div>';
+  }
+}
+
+/* ── MOVIES  ── */
+async function loadMovies() {
+  const c = document.getElementById('movies-container');
+  const res = await apiFetch('/api/movies'); if (!res) return;
+  allMoviesAdmin = await res.json();
+  if (!allMoviesAdmin.length) { c.innerHTML = '<p style="color:var(--cb-muted)">No movies yet.</p>'; return; }
+  c.innerHTML = `
+    <div style="overflow-x:auto">
+      <table class="admin-table">
+        <thead><tr><th>ID</th><th>Title</th><th>Genre</th><th>Duration</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>${allMoviesAdmin.map(m => `<tr>
+          <td style="color:var(--cb-muted)">${m.id}</td>
+          <td><strong>${m.title}</strong></td>
+          <td>${m.genre || '—'}</td>
+          <td>${Math.floor(m.duration_min/60)}h ${m.duration_min%60}m</td>
+          <td><span class="${m.is_active ? 'badge-confirmed' : 'badge-failed'}">${m.is_active ? 'Active' : 'Inactive'}</span></td>
+          <td>
+            <button class="btn btn-sm btn-outline-accent me-1" onclick="openMovieModal(${m.id})"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn btn-sm" style="border:1px solid rgba(230,57,70,0.3);color:var(--cb-red);background:transparent" onclick="deleteMovie(${m.id})"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+function openMovieModal(movieId = null) {
+  document.getElementById('movie-edit-id').value = movieId || '';
+  document.getElementById('movie-modal-title').textContent = movieId ? 'Edit Movie' : 'Add Movie';
+  if (movieId) {
+    const m = allMoviesAdmin.find(x => x.id === movieId);
+    if (m) {
+      document.getElementById('m-title').value    = m.title;
+      document.getElementById('m-genre').value    = m.genre || '';
+      document.getElementById('m-duration').value = m.duration_min;
+      document.getElementById('m-desc').value     = m.description || '';
+      document.getElementById('m-poster').value   = m.poster_url || '';
+    }
+  } else {
+    ['m-title','m-genre','m-duration','m-desc','m-poster'].forEach(id => document.getElementById(id).value = '');
+  }
+  openModal('movie-modal');
+}
+
+async function saveMovie() {
+  const editId = document.getElementById('movie-edit-id').value;
+  const body = {
+    title        : document.getElementById('m-title').value.trim(),
+    genre        : document.getElementById('m-genre').value.trim() || null,
+    duration_min : parseInt(document.getElementById('m-duration').value),
+    description  : document.getElementById('m-desc').value.trim() || null,
+    poster_url   : document.getElementById('m-poster').value.trim() || null,
+  };
+  if (!body.title || !body.duration_min) { showToast('Title and duration are required.', 'error'); return; }
+
+  const url    = editId ? `/api/movies/${editId}` : '/api/movies';
+  const method = editId ? 'PUT' : 'POST';
+  const res    = await apiFetch(url, { method, body: JSON.stringify(body) });
+  if (!res) return;
+
+  if (res.ok || res.status === 201) {
+    showToast(editId ? 'Movie updated!' : 'Movie added!', 'success');
+    closeModal('movie-modal');
+    loadMovies();
+  } else {
+    const d = await res.json();
+    showToast(d.detail || 'Error saving movie.', 'error');
+  }
+}
+
+async function deleteMovie(id) {
+  if (!confirm('Soft-delete this movie? Existing bookings are preserved.')) return;
+  const res = await apiFetch(`/api/movies/${id}`, { method: 'DELETE' });
+  if (res && (res.ok || res.status === 204)) { showToast('Movie removed.', 'success'); loadMovies(); }
+  else showToast('Failed to delete.', 'error');
+}
+
+/* ── HALLS  ─── */
+async function loadHalls() {
+  const c = document.getElementById('halls-container');
+  const res = await apiFetch('/halls'); if (!res) return;
+  allHallsAdmin = await res.json();
+  if (!allHallsAdmin.length) { c.innerHTML = '<p style="color:var(--cb-muted)">No halls yet.</p>'; return; }
+  c.innerHTML = `
+    <div style="overflow-x:auto">
+      <table class="admin-table">
+        <thead><tr><th>ID</th><th>Name</th><th>Capacity</th><th>Seats/Row</th><th>Status</th></tr></thead>
+        <tbody>${allHallsAdmin.map(h => `<tr>
+          <td style="color:var(--cb-muted)">${h.id}</td>
+          <td><strong>${h.name}</strong></td>
+          <td>${h.capacity}</td>
+          <td>${h.seats_per_row}</td>
+          <td><span class="${h.is_active ? 'badge-confirmed' : 'badge-failed'}">${h.is_active ? 'Active' : 'Inactive'}</span></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+function openHallModal() {
+  ['h-name','h-capacity'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('h-spr').value = '6';
+  openModal('hall-modal');
+}
+
+async function saveHall() {
+  const body = {
+    name          : document.getElementById('h-name').value.trim(),
+    capacity      : parseInt(document.getElementById('h-capacity').value),
+    seats_per_row : parseInt(document.getElementById('h-spr').value),
+  };
+  if (!body.name || !body.capacity) { showToast('Name and capacity are required.', 'error'); return; }
+  const res = await apiFetch('/halls', { method: 'POST', body: JSON.stringify(body) });
+  if (!res) return;
+  if (res.ok || res.status === 201) {
+    showToast('Hall created!', 'success'); closeModal('hall-modal'); loadHalls();
+  } else {
+    const d = await res.json(); showToast(d.detail || 'Error.', 'error');
+  }
+}
+
+/* ── SHOWTIMES   ────────────── */
+async function loadShowtimes() {
+  const c = document.getElementById('showtimes-container');
+  const res = await fetch('/showtimes');
+  const data = await res.json();
+  if (!data.length) { c.innerHTML = '<p style="color:var(--cb-muted)">No showtimes yet.</p>'; return; }
+  c.innerHTML = `
+    <div style="overflow-x:auto">
+      <table class="admin-table">
+        <thead><tr><th>ID</th><th>Movie</th><th>Hall</th><th>Start Time</th><th>Price</th><th>Status</th></tr></thead>
+        <tbody>${data.map(s => `<tr>
+          <td style="color:var(--cb-muted)">${s.id}</td>
+          <td><strong>${s.movie.title}</strong></td>
+          <td>${s.hall.name}</td>
+          <td>${fmtDateTime(s.start_time)}</td>
+          <td>Rs. ${s.ticket_price.toFixed(2)}</td>
+          <td><span class="${s.is_active ? 'badge-confirmed' : 'badge-failed'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+async function openShowtimeModal() {
+  // Populate selects
+  const [mRes, hRes] = await Promise.all([fetch('/api/movies'), apiFetch('/halls')]);
+  const movies = await mRes.json();
+  const halls  = await hRes.json();
+  document.getElementById('st-movie').innerHTML = movies.map(m => `<option value="${m.id}">${m.title}</option>`).join('');
+  document.getElementById('st-hall').innerHTML  = halls.map(h => `<option value="${h.id}">${h.name} (${h.capacity} seats)</option>`).join('');
+  document.getElementById('st-time').value  = '';
+  document.getElementById('st-price').value = '';
+  openModal('showtime-modal');
+}
+
+async function saveShowtime() {
+  const dt = document.getElementById('st-time').value;
+  if (!dt) { showToast('Please select a date and time.', 'error'); return; }
+  const body = {
+    movie_id     : parseInt(document.getElementById('st-movie').value),
+    hall_id      : parseInt(document.getElementById('st-hall').value),
+    start_time   : new Date(dt).toISOString(),
+    ticket_price : parseFloat(document.getElementById('st-price').value),
+  };
+  if (isNaN(body.ticket_price)) { showToast('Please enter a valid price.', 'error'); return; }
+  const res = await apiFetch('/showtimes', { method: 'POST', body: JSON.stringify(body) });
+  if (!res) return;
+  if (res.ok || res.status === 201) {
+    showToast('Showtime added!', 'success'); closeModal('showtime-modal'); loadShowtimes();
+  } else {
+    const d = await res.json(); showToast(d.detail || 'Error.', 'error');
+  }
+}
+
+// Check query param for tab, default to audit
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get('tab') || 'audit';
+  const tabEl = document.querySelector(`.dash-tab[onclick*="${tab}"]`);
+  if (tabEl) {
+    switchTab(tab, tabEl);
+  } else {
+    loadAudit();
+  }
+})();
+</script>
+{% endblock %}

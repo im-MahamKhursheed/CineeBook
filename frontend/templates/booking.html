@@ -1,0 +1,512 @@
+{% extends "base.html" %}
+{% block title %}Book Tickets{% endblock %}
+
+{% block content %}
+
+<!-- PAGE HERO -->
+<section style="background:var(--cb-surface);border-bottom:1px solid var(--cb-border);padding:48px 0 40px">
+  <div class="container">
+    <div class="hero-eyebrow mb-3"><i class="fa-solid fa-ticket me-2"></i>Seat Reservation</div>
+    <h1 style="font-family:var(--cb-font-display);font-size:clamp(2rem,5vw,3.5rem);color:#fff;margin-bottom:8px">PICK YOUR SEAT</h1>
+    <p style="color:var(--cb-muted);font-size:.95rem">Select a movie, choose a showtime, then reserve your seat. Per-showtime FCFS ordering — first request wins.</p>
+  </div>
+</section>
+
+<section class="page-section">
+  <div class="container">
+
+    <!-- Login prompt -->
+    <div id="login-prompt" class="d-none mb-4 p-4 rounded-3 text-center" style="background:rgba(245,166,35,0.07);border:1px solid rgba(245,166,35,0.25)">
+      <i class="fa-solid fa-lock" style="font-size:2rem;color:var(--cb-accent);margin-bottom:12px"></i>
+      <h5 style="color:#fff">Sign in to book tickets</h5>
+      <p style="color:var(--cb-muted);font-size:.88rem">You need an account to reserve seats.</p>
+      <a href="/login?next=/booking" class="btn btn-accent me-2">Sign In</a>
+      <a href="/register" class="btn btn-outline-accent">Register Free</a>
+    </div>
+
+    <!-- Step wizard -->
+    <div id="booking-wizard" class="d-none">
+      <div class="booking-steps mb-5">
+        <div class="step-item active" id="step-1-indicator">
+          <div class="step-dot">1</div>
+          <div class="step-label">Movie</div>
+        </div>
+        <div class="step-item" id="step-2-indicator">
+          <div class="step-dot">2</div>
+          <div class="step-label">Showtime</div>
+        </div>
+        <div class="step-item" id="step-3-indicator">
+          <div class="step-dot">3</div>
+          <div class="step-label">Seat</div>
+        </div>
+      </div>
+
+      <!-- STEP 1: Choose Movie -->
+      <div id="step-1" class="dash-section active">
+        <h4 style="font-family:var(--cb-font-display);color:#fff;margin-bottom:20px">Select a Movie</h4>
+        <div class="row g-3" id="movie-grid">
+          <div class="col-12 text-center py-4" style="color:var(--cb-muted)">
+            <i class="fa-solid fa-spinner fa-spin me-2"></i>Loading movies…
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2: Choose Showtime -->
+      <div id="step-2" class="dash-section">
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <button class="btn btn-sm btn-outline-accent" onclick="goStep(1)">
+            <i class="fa-solid fa-arrow-left me-1"></i>Back
+          </button>
+          <h4 style="font-family:var(--cb-font-display);color:#fff;margin:0">Select a Showtime</h4>
+        </div>
+        <div id="selected-movie-banner" class="mb-4 p-3 rounded-3" style="background:var(--cb-surface-2);border:1px solid var(--cb-border)"></div>
+        <div class="row g-3" id="showtime-grid">
+          <div class="col-12 text-center py-4" style="color:var(--cb-muted)">
+            <i class="fa-solid fa-spinner fa-spin me-2"></i>Loading showtimes…
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: Seat Map -->
+      <div id="step-3" class="dash-section">
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <button class="btn btn-sm btn-outline-accent" onclick="goStep(2)">
+            <i class="fa-solid fa-arrow-left me-1"></i>Back
+          </button>
+          <h4 style="font-family:var(--cb-font-display);color:#fff;margin:0">Choose Your Seat</h4>
+        </div>
+
+        <!-- Showtime info banner -->
+        <div id="showtime-banner" class="mb-4 p-3 rounded-3 d-flex flex-wrap gap-3 justify-content-between align-items-center"
+             style="background:var(--cb-surface-2);border:1px solid rgba(245,166,35,0.2)">
+        </div>
+
+        <div class="row g-4">
+          <!-- Seat map -->
+          <div class="col-lg-8">
+            <div class="cb-card p-4">
+              <p class="text-center mb-1" style="font-size:.7rem;color:var(--cb-muted);text-transform:uppercase;letter-spacing:.2em">Screen</p>
+              <div class="seat-screen" style="max-width:70%;margin:0 auto 36px"></div>
+              <div id="seat-map" class="d-flex flex-column align-items-center"></div>
+              <div class="seat-legend mt-4">
+                <div class="legend-item"><div class="legend-dot free"></div> Available</div>
+                <div class="legend-item"><div class="legend-dot selected"></div> Selected (You)</div>
+                <div class="legend-item"><div class="legend-dot locked"></div> Locked (Other User)</div>
+                <div class="legend-item"><div class="legend-dot occupied"></div> Booked</div>
+              </div>
+            </div>
+            <div class="mt-3 p-3 rounded-3 d-flex flex-wrap gap-2" style="background:var(--cb-surface);border:1px solid var(--cb-border)">
+              <div class="os-badge"><i class="fa-solid fa-lock"></i> Mutex — Critical Section</div>
+              <div class="os-badge"><i class="fa-solid fa-gauge"></i> Semaphore — Hall Capacity</div>
+              <div class="os-badge"><i class="fa-solid fa-list-ol"></i> FCFS — Per-Showtime Queue</div>
+            </div>
+          </div>
+
+          <!-- Stats & Selection panel -->
+          <div class="col-lg-4 d-flex flex-column gap-3">
+            <!-- Selected Seats Preview -->
+            <div class="cb-card p-4" id="selection-panel">
+              <h6 style="font-family:var(--cb-font-display);font-size:1rem;color:rgba(255,255,255,.5);letter-spacing:.1em;margin-bottom:16px">YOUR SELECTION</h6>
+              <div class="d-flex flex-column gap-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span style="color:var(--cb-muted);font-size:.85rem">Seats:</span>
+                  <span style="font-weight:bold;color:var(--cb-accent);font-size:.95rem;text-align:right" id="selected-seats-list">None</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span style="color:var(--cb-muted);font-size:.85rem">Tickets:</span>
+                  <span style="font-weight:bold;color:#fff;font-size:.95rem" id="selected-tickets-count">0</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span style="color:var(--cb-muted);font-size:.85rem">Total Price:</span>
+                  <span style="font-weight:bold;color:var(--cb-green);font-size:1.1rem" id="selected-total-price">Rs. 0.00</span>
+                </div>
+                <hr style="border-color:var(--cb-border);margin:8px 0">
+                <div class="d-flex gap-2">
+                  <button class="btn btn-accent flex-grow-1 btn-sm" id="btn-done" onclick="confirmSelection()" disabled>
+                    <i class="fa-solid fa-check me-1"></i>Done
+                  </button>
+                  <button class="btn btn-outline-accent btn-sm" id="btn-cancel" onclick="cancelSelection()" disabled>
+                    <i class="fa-solid fa-xmark me-1"></i>Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Capacity stats -->
+            <div class="cb-card p-4">
+              <h6 style="font-family:var(--cb-font-display);font-size:1rem;color:rgba(255,255,255,.5);letter-spacing:.1em;margin-bottom:16px">CAPACITY</h6>
+              <div class="stat-card mb-3">
+                <div class="stat-icon green"><i class="fa-solid fa-chair"></i></div>
+                <div><div class="stat-num" id="stat-free">—</div><div class="stat-lbl">Available Seats</div></div>
+              </div>
+              <div class="stat-card mb-3">
+                <div class="stat-icon red"><i class="fa-solid fa-user-check"></i></div>
+                <div><div class="stat-num" id="stat-occupied">—</div><div class="stat-lbl">Booked Seats</div></div>
+              </div>
+              <div class="stat-card mb-4">
+                <div class="stat-icon amber"><i class="fa-solid fa-film"></i></div>
+                <div><div class="stat-num" id="stat-total">—</div><div class="stat-lbl">Total Capacity</div></div>
+              </div>
+              <div class="capacity-bar">
+                <div class="capacity-fill" id="capacity-fill" style="width:0%"></div>
+              </div>
+              <p class="text-center mt-2" style="font-size:.72rem;color:var(--cb-muted)">Semaphore utilisation</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONFLICT WARNING MODAL -->
+        <div class="admin-modal-overlay" id="conflict-modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+          <div class="admin-modal" style="max-width:440px; border: 2px solid var(--cb-red); background: #1a0a0f;">
+            <div class="text-center p-3">
+              <i class="fa-solid fa-triangle-exclamation text-danger fa-3x mb-3"></i>
+              <h5 style="color:#fff; font-family:var(--cb-font-display);">SEAT UNAVAILABLE</h5>
+              <p style="color:var(--cb-text); font-size:.9rem; margin-top:14px;">
+                This seat is currently being viewed by another user. Please select a different seat or wait until it becomes available.
+              </p>
+              <button class="btn btn-accent btn-sm mt-3 w-100" onclick="document.getElementById('conflict-modal-overlay').classList.remove('open')">
+                Understand
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /booking-wizard -->
+
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allMovies    = [];
+let allShowtimes = [];
+let selectedMovie   = null;
+let selectedShowtime = null;
+let refreshInterval  = null;
+let localSelectedSeats = [];
+
+const GENRE_COLORS = {
+  'Sci-Fi': ['#0d1b4b','#4fc3f7'], 'Action': ['#1a0a0a','#ff6b6b'],
+  'Drama': ['#0a1a0a','#69f0ae'], 'Thriller': ['#1a1200','#ffd54f'],
+  'Mystery': ['#0f0f1a','#ce93d8'], 'default': ['#111118','#f5a623']
+};
+
+// ── Auth guard   ─────────────
+(async function init() {
+  if (!Auth.isLoggedIn()) {
+    document.getElementById('login-prompt').classList.remove('d-none');
+    return;
+  }
+  document.getElementById('booking-wizard').classList.remove('d-none');
+
+  // Load movies
+  try {
+    const res = await fetch('/api/movies');
+    allMovies = await res.json();
+    renderMovieGrid();
+  } catch(e) {
+    document.getElementById('movie-grid').innerHTML =
+      '<div class="col-12" style="color:var(--cb-red)">Failed to load movies.</div>';
+  }
+
+  // Check URL param ?movie_id=
+  const params   = new URLSearchParams(window.location.search);
+  const movieId  = parseInt(params.get('movie_id'));
+  if (movieId) {
+    const m = allMovies.find(x => x.id === movieId);
+    if (m) { selectedMovie = m; goStep(2); loadShowtimes(); }
+  }
+})();
+
+// ── Step navigation   ────────
+function goStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById(`step-${i}`).classList.toggle('active', i === n);
+    const ind = document.getElementById(`step-${i}-indicator`);
+    ind.classList.remove('active','done');
+    if (i < n) ind.classList.add('done');
+    if (i === n) ind.classList.add('active');
+  });
+  if (n !== 3) {
+    if (selectedShowtime && localSelectedSeats.length > 0) {
+      unlockAllSeats(selectedShowtime.id);
+      localSelectedSeats = [];
+      updateSelectionPanel();
+    }
+    if (refreshInterval) { clearInterval(refreshInterval); refreshInterval = null; }
+  }
+}
+
+// Release locks if the user closes/leaves the page
+window.addEventListener('beforeunload', () => {
+  if (selectedShowtime && localSelectedSeats.length > 0) {
+    navigator.sendBeacon || fetch(`/showtimes/${selectedShowtime.id}/unlock-all`, {
+      method: 'POST',
+      headers: Auth.headers(),
+      keepalive: true
+    });
+  }
+});
+
+// ── STEP 1: Movies   ──────────
+function renderMovieGrid() {
+  const grid = document.getElementById('movie-grid');
+  if (!allMovies.length) {
+    grid.innerHTML = '<div class="col-12" style="color:var(--cb-muted)">No movies available.</div>';
+    return;
+  }
+  grid.innerHTML = allMovies.map(m => {
+    const [bg, acc] = GENRE_COLORS[m.genre] || GENRE_COLORS.default;
+    const hrs = Math.floor(m.duration_min / 60), mins = m.duration_min % 60;
+    return `
+      <div class="col-6 col-md-4 col-lg-3">
+        <div class="movie-select-card" onclick="selectMovie(${m.id})">
+          <div class="ms-poster" style="background: ${m.poster_url ? `url('${m.poster_url}')` : `linear-gradient(135deg,${bg},#0a0a0f)`}; background-size: cover; background-position: center; height: 130px;">
+            ${m.poster_url ? '' : `<i class="fa-solid fa-film" style="color:${acc}"></i>`}
+          </div>
+          <div class="ms-info">
+            <div class="ms-title">${m.title}</div>
+            <div class="ms-genre">${m.genre || '—'} · ${hrs}h ${mins}m</div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function selectMovie(movieId) {
+  selectedMovie = allMovies.find(m => m.id === movieId);
+  if (!selectedMovie) return;
+  document.querySelectorAll('.movie-select-card').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.closest('.movie-select-card').classList.add('selected');
+  goStep(2);
+  loadShowtimes();
+}
+
+// ── STEP 2: Showtimes   ───────
+async function loadShowtimes() {
+  const [bg, acc] = GENRE_COLORS[selectedMovie.genre] || GENRE_COLORS.default;
+  document.getElementById('selected-movie-banner').innerHTML = `
+    <div class="d-flex align-items-center gap-3">
+      <div style="width:48px;height:48px;background: ${selectedMovie.poster_url ? `url('${selectedMovie.poster_url}')` : `linear-gradient(135deg,${bg},#0a0a0f)`}; background-size: cover; background-position: center; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink: 0;">
+        ${selectedMovie.poster_url ? '' : `<i class="fa-solid fa-film" style="color:${acc}"></i>`}
+      </div>
+      <div>
+        <div style="font-family:var(--cb-font-display);color:#fff;font-size:1.2rem">${selectedMovie.title}</div>
+        <div style="font-size:.78rem;color:var(--cb-muted)">${selectedMovie.genre || ''} · ${Math.floor(selectedMovie.duration_min/60)}h ${selectedMovie.duration_min%60}m</div>
+      </div>
+    </div>`;
+
+  const grid = document.getElementById('showtime-grid');
+  grid.innerHTML = '<div class="col-12 text-center py-4" style="color:var(--cb-muted)"><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading showtimes…</div>';
+
+  try {
+    const res = await fetch('/showtimes');
+    allShowtimes = (await res.json()).filter(s => s.movie_id === selectedMovie.id);
+
+    if (!allShowtimes.length) {
+      grid.innerHTML = '<div class="col-12" style="color:var(--cb-muted)">No showtimes available for this movie.</div>';
+      return;
+    }
+
+    grid.innerHTML = allShowtimes.map(s => {
+      const dt = new Date(s.start_time);
+      const dateStr = dt.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+      const timeStr = dt.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+      return `
+        <div class="col-sm-6 col-md-4">
+          <div class="showtime-card" onclick="selectShowtime(${s.id})">
+            <div class="show-time">${timeStr}</div>
+            <div class="show-hall mb-1"><i class="fa-solid fa-location-dot me-1"></i>${s.hall.name} · ${dateStr}</div>
+            <div class="show-price"><i class="fa-solid fa-ticket me-1"></i>Rs. ${s.ticket_price.toFixed(2)}</div>
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    grid.innerHTML = '<div class="col-12" style="color:var(--cb-red)">Failed to load showtimes.</div>';
+  }
+}
+
+function selectShowtime(showtimeId) {
+  selectedShowtime = allShowtimes.find(s => s.id === showtimeId);
+  if (!selectedShowtime) return;
+  document.querySelectorAll('.showtime-card').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  goStep(3);
+  loadSeatMap();
+  if (refreshInterval) clearInterval(refreshInterval);
+  refreshInterval = setInterval(loadSeatMap, 8000);
+}
+
+// ── STEP 3: Seat map   ────────
+async function loadSeatMap() {
+  const st = selectedShowtime;
+  if (!st) return;
+
+  // Banner
+  const dt = new Date(st.start_time);
+  const [bg, acc] = GENRE_COLORS[selectedMovie.genre] || GENRE_COLORS.default;
+  document.getElementById('showtime-banner').innerHTML = `
+    <div class="d-flex align-items-center gap-3">
+      <div style="width:48px;height:48px;background: ${selectedMovie.poster_url ? `url('${selectedMovie.poster_url}')` : `linear-gradient(135deg,${bg},#0a0a0f)`}; background-size: cover; background-position: center; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink: 0;">
+        ${selectedMovie.poster_url ? '' : `<i class="fa-solid fa-film" style="color:${acc}"></i>`}
+      </div>
+      <div>
+        <div style="font-family:var(--cb-font-display);font-size:1.1rem;color:#fff">${selectedMovie.title}</div>
+        <div style="font-size:.8rem;color:var(--cb-muted)">${st.hall.name} · ${fmtDate(st.start_time)}</div>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:var(--cb-font-display);font-size:1.3rem;color:var(--cb-accent)">${fmtTime(st.start_time)}</div>
+      <div style="font-size:.8rem;color:var(--cb-muted)">Rs. ${st.ticket_price.toFixed(2)} per seat</div>
+    </div>`;
+
+  try {
+    const res = await apiFetch(`/showtimes/${st.id}/seats`);
+    if (!res) return;
+    const data = await res.json();
+
+    // Stats
+    document.getElementById('stat-free').textContent     = data.free_seats;
+    document.getElementById('stat-occupied').textContent = data.occupied_seats;
+    document.getElementById('stat-total').textContent    = data.total_seats;
+    const fill = document.getElementById('capacity-fill');
+    if (fill) fill.style.width = ((data.occupied_seats / data.total_seats) * 100) + '%';
+
+    // Seat map
+    const mapEl = document.getElementById('seat-map');
+    renderSeatMap(mapEl, data.seats, async (seat, btn) => {
+      if (seat.is_booked) return;
+      
+      if (seat.is_locked) {
+        showConflictModal();
+        return;
+      }
+      
+      if (seat.locked_by_me) {
+        // Deselect seat
+        const unlockRes = await unlockSeat(st.id, seat.seat_number);
+        if (unlockRes) {
+          localSelectedSeats = localSelectedSeats.filter(s => s !== seat.seat_number);
+          updateSelectionPanel();
+          loadSeatMap();
+        }
+      } else {
+        // Lock and select seat
+        const lockRes = await lockSeat(st.id, seat.seat_number);
+        if (lockRes) {
+          localSelectedSeats.push(seat.seat_number);
+          updateSelectionPanel();
+          loadSeatMap();
+        }
+      }
+    });
+  } catch(e) {
+    console.warn('Seat map error:', e);
+  }
+}
+
+// ─── Selection Panel Helpers   
+function updateSelectionPanel() {
+  const seatsList = document.getElementById('selected-seats-list');
+  const countSpan = document.getElementById('selected-tickets-count');
+  const priceSpan = document.getElementById('selected-total-price');
+  const btnDone = document.getElementById('btn-done');
+  const btnCancel = document.getElementById('btn-cancel');
+  
+  if (!selectedShowtime || localSelectedSeats.length === 0) {
+    seatsList.textContent = 'None';
+    countSpan.textContent = '0';
+    priceSpan.textContent = 'Rs. 0.00';
+    btnDone.disabled = true;
+    btnCancel.disabled = true;
+    return;
+  }
+  
+  localSelectedSeats.sort((a, b) => a - b);
+  
+  const spr = selectedShowtime.hall.seats_per_row;
+  const row_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const seatLabels = localSelectedSeats.map(s => {
+    const row_idx = Math.floor((s - 1) / spr);
+    const col_idx = (s - 1) % spr + 1;
+    return `${row_letters[row_idx]}${col_idx}`;
+  });
+  
+  seatsList.textContent = seatLabels.join(', ');
+  countSpan.textContent = localSelectedSeats.length;
+  
+  const totalPrice = selectedShowtime.ticket_price * localSelectedSeats.length;
+  priceSpan.textContent = `Rs. ${totalPrice.toFixed(2)}`;
+  
+  btnDone.disabled = false;
+  btnCancel.disabled = false;
+}
+
+async function confirmSelection() {
+  if (localSelectedSeats.length === 0) return;
+  
+  const btnDone = document.getElementById('btn-done');
+  const btnCancel = document.getElementById('btn-cancel');
+  
+  btnDone.disabled = true;
+  btnCancel.disabled = true;
+  btnDone.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Processing...';
+  
+  try {
+    const res = await apiFetch(`/showtimes/${selectedShowtime.id}/book-multiple`, {
+      method: 'POST',
+      body: JSON.stringify({ seat_numbers: localSelectedSeats })
+    });
+    
+    if (!res) return;
+    const data = await res.json();
+    
+    if (data.status === 'success') {
+      showToast(`🎟️ ${data.message}`, 'success');
+      localSelectedSeats = [];
+      updateSelectionPanel();
+      if (data.ticket) {
+        renderTicketModal(data.ticket);
+      }
+      loadSeatMap();
+    } else {
+      showToast(data.message || 'Booking failed.', 'error');
+      btnDone.disabled = false;
+      btnCancel.disabled = false;
+      btnDone.innerHTML = '<i class="fa-solid fa-check me-1"></i>Done';
+    }
+  } catch (err) {
+    showToast('Network error during booking.', 'error');
+    btnDone.disabled = false;
+    btnCancel.disabled = false;
+    btnDone.innerHTML = '<i class="fa-solid fa-check me-1"></i>Done';
+  }
+}
+
+async function cancelSelection() {
+  if (localSelectedSeats.length === 0) return;
+  
+  const btnCancel = document.getElementById('btn-cancel');
+  btnCancel.disabled = true;
+  btnCancel.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Cancelling...';
+  
+  await unlockAllSeats(selectedShowtime.id);
+  localSelectedSeats = [];
+  updateSelectionPanel();
+  loadSeatMap();
+  showToast('Seat selection cancelled and released.', 'success');
+  btnCancel.innerHTML = '<i class="fa-solid fa-xmark me-1"></i>Cancel';
+}
+
+function showConflictModal() {
+  const overlay = document.getElementById('conflict-modal-overlay');
+  if (overlay) {
+    overlay.classList.add('open');
+  } else {
+    showToast('This seat is currently being viewed by another user. Please select a different seat or wait until it becomes available.', 'error');
+  }
+}
+</script>
+{% endblock %}
