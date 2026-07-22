@@ -11,13 +11,20 @@ from datetime import datetime, timezone, timedelta
 from pymongo import MongoClient, ASCENDING
 from pymongo.errors import ConnectionFailure
 
-# ─── Configuration  ────────
+# ─── Configuration ────────
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-DB_NAME   = os.getenv("DB_NAME", "cinebook")
+MONGO_URI = os.getenv("MONGO_URI")
+DB_NAME = os.getenv("DB_NAME", "cinebook")
+
+if not MONGO_URI:
+    raise ValueError("MONGO_URI environment variable is not set")
 
 # Establish a single global MongoClient
-client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+client = MongoClient(
+    MONGO_URI,
+    serverSelectionTimeoutMS=5000
+)
+
 db = client[DB_NAME]
 
 
